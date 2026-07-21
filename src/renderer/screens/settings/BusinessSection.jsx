@@ -41,9 +41,15 @@ export default function BusinessSection() {
   }
 
   async function onLogo() {
-    const res = await chooseLogo();
-    if (!res.ok) toast(res.error || 'Could not upload logo.', 'danger');
-    else if (!res.canceled) toast('Logo updated.', 'success');
+    try {
+      const res = await chooseLogo();
+      if (!res.ok) toast(res.error || 'Could not upload logo.', 'danger');
+      else if (!res.canceled) toast('Logo updated.', 'success');
+    } catch (err) {
+      // Surfaces IPC-level failures (e.g. running an old app instance
+      // where this channel doesn't exist yet) instead of failing silently.
+      toast(`Logo upload failed: ${err.message}`, 'danger');
+    }
   }
 
   return (

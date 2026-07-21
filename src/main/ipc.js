@@ -1,11 +1,15 @@
 const { ipcMain, app, dialog, BrowserWindow } = require('electron');
-const fs = require('node:fs');
-const path = require('node:path');
 const { getDb } = require('./db');
 const { verifyPassword, hashPassword } = require('./auth');
 const { logAudit } = require('./audit');
 const { dataDir } = require('./paths');
-const { getAllSettings, setSettings, getSetting, applyBusinessTitle } = require('./settings');
+const {
+  getAllSettings,
+  setSettings,
+  applyBusinessTitle,
+  logoDataUrl,
+  saveLogoFromPath,
+} = require('./settings');
 
 // All permissions in the system — owner implicitly has every one.
 const ALL_PERMISSIONS = [
@@ -42,18 +46,6 @@ function requireOwner() {
   if (!currentUser) return { ok: false, error: 'Login required.' };
   if (currentUser.role !== 'owner') return { ok: false, error: 'Owner access only.' };
   return null;
-}
-
-const LOGO_MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
-
-function logoDataUrl(db) {
-  const file = getSetting(db, 'business.logo');
-  if (!file) return null;
-  const full = path.join(dataDir(), 'images', file);
-  if (!fs.existsSync(full)) return null;
-  const mime = LOGO_MIME[path.extname(full).toLowerCase()];
-  if (!mime) return null;
-  return `data:${mime};base64,${fs.readFileSync(full).toString('base64')}`;
 }
 
 function registerIpc() {
@@ -137,35 +129,25 @@ function registerIpc() {
   });
 
   ipcMain.handle('settings:choose-logo', async (e) => {
-    const denied = requireOwner();
-    if (denied) return denied;
-    const win = BrowserWindow.fromWebContents(e.sender);
-    const result = await dialog.showOpenDialog(win, {
-      title: 'Choose Restaurant Logo',
-      properties: ['openFile'],
-      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }],
-    });
-    if (result.canceled || result.filePaths.length === 0) {
-      return { ok: true, canceled: true };
+    try {
+      const denied = requireOwner();
+      if (denied) return denied;
+      const win = BrowserWindow.fromWebContents(e.sender);
+      const result = await dialog.showOpenDialog(win, {
+        title: 'Choose Restaurant Logo',
+        properties: ['openFile'],
+        filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }],
+      });
+      if (result.canceled || result.filePaths.length === 0) {
+        return { ok: true, canceled: true };
+      }
+      const db = getDb();
+      const saved = saveLogoFromPath(db, result.filePaths[0]);
+      logAudit(db, currentUser.id, 'settings_change', 'setting', null, `business.logo -> ${saved.file}`);
+      return { ok: true, logoDataUrl: saved.dataUrl };
+    } catch (err) {
+      return { ok: false, error: `Logo upload failed: ${err.message}` };
     }
-    const src = result.filePaths[0];
-    const ext = path.extname(src).toLowerCase();
-    if (!LOGO_MIME[ext]) return { ok: false, error: 'Please choose a PNG or JPG image.' };
-
-    const imagesDir = path.join(dataDir(), 'images');
-    fs.mkdirSync(imagesDir, { recursive: true });
-    // clear previous logo files so stale extensions don't linger
-    for (const old of ['logo.png', 'logo.jpg', 'logo.jpeg']) {
-      const p = path.join(imagesDir, old);
-      if (fs.existsSync(p)) fs.unlinkSync(p);
-    }
-    const destName = `logo${ext}`;
-    fs.copyFileSync(src, path.join(imagesDir, destName));
-
-    const db = getDb();
-    setSettings(db, { 'business.logo': destName });
-    logAudit(db, currentUser.id, 'settings_change', 'setting', null, `business.logo -> ${destName}`);
-    return { ok: true, logoDataUrl: logoDataUrl(db) };
   });
 }
 

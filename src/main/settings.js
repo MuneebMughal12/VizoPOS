@@ -1,6 +1,9 @@
 // Key–value settings (settings table). New settings need only a new default
 // here — no schema change. All values stored as strings.
 const { BrowserWindow } = require('electron');
+const fs = require('node:fs');
+const path = require('node:path');
+const { dataDir } = require('./paths');
 
 const DEFAULTS = {
   // Business
@@ -87,4 +90,45 @@ function applyBusinessTitle(db) {
   }
 }
 
-module.exports = { DEFAULTS, seedDefaults, getAllSettings, getSetting, setSettings, applyBusinessTitle };
+// ---- restaurant logo -------------------------------------------------
+const LOGO_MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
+
+function logoDataUrl(db) {
+  const file = getSetting(db, 'business.logo');
+  if (!file) return null;
+  const full = path.join(dataDir(), 'images', file);
+  if (!fs.existsSync(full)) return null;
+  const mime = LOGO_MIME[path.extname(full).toLowerCase()];
+  if (!mime) return null;
+  return `data:${mime};base64,${fs.readFileSync(full).toString('base64')}`;
+}
+
+// Copies the chosen image into the app's images folder and records it in
+// settings. Throws with a readable message on any failure.
+function saveLogoFromPath(db, src) {
+  const ext = path.extname(src).toLowerCase();
+  if (!LOGO_MIME[ext]) throw new Error('Please choose a PNG or JPG image.');
+  if (!fs.existsSync(src)) throw new Error('The selected file could not be found.');
+
+  const imagesDir = path.join(dataDir(), 'images');
+  fs.mkdirSync(imagesDir, { recursive: true });
+  for (const old of ['logo.png', 'logo.jpg', 'logo.jpeg']) {
+    const p = path.join(imagesDir, old);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
+  const destName = `logo${ext}`;
+  fs.copyFileSync(src, path.join(imagesDir, destName));
+  setSettings(db, { 'business.logo': destName });
+  return { file: destName, dataUrl: logoDataUrl(db) };
+}
+
+module.exports = {
+  DEFAULTS,
+  seedDefaults,
+  getAllSettings,
+  getSetting,
+  setSettings,
+  applyBusinessTitle,
+  logoDataUrl,
+  saveLogoFromPath,
+};
