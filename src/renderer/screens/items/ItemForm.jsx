@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Plus, Check } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Toggle from '../../components/ui/Toggle';
+import Segmented from '../../components/ui/Segmented';
 import Modal from '../../components/ui/Modal';
 import { useToast } from '../../components/ui/Toast';
 import DishImage from '../../components/DishImage';
 import VariantsEditor from './VariantsEditor';
 import ImagePickerModal from './ImagePickerModal';
 import GenerateCombinationsModal from './GenerateCombinationsModal';
+import QuickWeightsEditor, { DEFAULT_QUICK_WEIGHTS } from './QuickWeightsEditor';
 
 const EMPTY = {
   id: null,
@@ -19,12 +21,26 @@ const EMPTY = {
   price: '',
   has_variants: 0,
   variants: [],
+  sold_by: 'unit',
+  quick_weights: [],
   track_stock: 0,
   stock_qty: '',
   low_stock_level: '',
   sort_order: 0,
   is_active: 1,
   addon_ids: [],
+};
+
+const SOLD_BY_OPTIONS = [
+  { value: 'unit', label: 'Normal' },
+  { value: 'piece', label: 'Per piece' },
+  { value: 'weight', label: 'Per kg (weight)' },
+];
+
+const SOLD_BY_HINT = {
+  unit: 'Fixed price, single serving — plate, cup, bottle.',
+  piece: 'Fixed price each; quantities count as pieces (pcs). The POS offers a quick piece picker (1, 2, 4, 6, 12 + custom).',
+  weight: 'The price below is the rate per kg. The POS opens a weight picker with your quick buttons plus any custom weight.',
 };
 
 export default function ItemForm({ itemId, categories, addons, currency, onChanged }) {
@@ -36,18 +52,40 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
   const [focusReq, setFocusReq] = useState(null); // { index, token } for price focus
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [newCat, setNewCat] = useState(null); // null = hidden, '' = open+empty
+  const nameRef = useRef(null);
 
   useEffect(() => {
     if (itemId) {
       window.vizo.menu.getItem(itemId).then((res) => {
         if (res.ok) {
-          setDraft({ ...res.item, price: res.item.price ?? '', category_id: res.item.category_id ?? '' });
+          setDraft({
+            ...res.item,
+            price: res.item.price ?? '',
+            category_id: res.item.category_id ?? '',
+            sold_by: res.item.sold_by || 'unit',
+            quick_weights: (res.item.quick_weights || []).map((w) => ({
+              label: w.label,
+              kg: String(w.kg),
+            })),
+          });
         }
       });
     } else {
       setDraft(EMPTY);
     }
   }, [itemId]);
+
+  // Switching to weight for the first time seeds the default quick buttons.
+  function setSoldBy(value) {
+    setDraft((d) => ({
+      ...d,
+      sold_by: value,
+      quick_weights:
+        value === 'weight' && d.quick_weights.length === 0
+          ? DEFAULT_QUICK_WEIGHTS.map((w) => ({ ...w }))
+          : d.quick_weights,
+    }));
+  }
 
   const set = (key) => (e) => {
     const value = typeof e === 'string' ? e : e.target.value;
@@ -97,6 +135,7 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
       setDraft(EMPTY);
       setFocusReq(null);
       setNewCat(null);
+      setTimeout(() => nameRef.current?.focus(), 0);
     }
     onChanged(null);
   }
@@ -141,7 +180,13 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
         </div>
       </div>
 
-      <Input label="Item Name" value={draft.name} onChange={set('name')} placeholder="e.g. Biryani" />
+      <Input
+        label="Item Name"
+        ref={nameRef}
+        value={draft.name}
+        onChange={set('name')}
+        placeholder="e.g. Biryani"
+      />
 
       <div className="item-form__cat-row">
         <Select
@@ -174,28 +219,56 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
         )}
       </div>
 
+      <div className="field">
+        <span className="label">Sold By</span>
+        <Segmented options={SOLD_BY_OPTIONS} value={draft.sold_by} onChange={setSoldBy} />
+        <p className="settings__hint">{SOLD_BY_HINT[draft.sold_by]}</p>
+      </div>
+
       <Toggle
         label="Has Variants"
-        hint="e.g. Single / Double / Chicken / Beef — each with its own price."
+        hint={
+          draft.sold_by === 'weight'
+            ? 'e.g. Chicken Pulao vs Beef Pulao — each with its own rate per kg.'
+            : 'e.g. Single / Double / Chicken / Beef — each with its own price.'
+        }
         checked={!!draft.has_variants}
         onChange={setBool('has_variants')}
       />
 
       {draft.has_variants ? (
-        <VariantsEditor
-          variants={draft.variants}
-          currency={currency}
-          onChange={(variants) => setDraft((d) => ({ ...d, variants }))}
-          onGenerate={() => setGenOpen(true)}
-          focusReq={focusReq}
-        />
+        <>
+          {draft.sold_by === 'weight' && (
+            <p className="settings__hint">Variant prices are the rate per kg.</p>
+          )}
+          <VariantsEditor
+            variants={draft.variants}
+            currency={currency}
+            onChange={(variants) => setDraft((d) => ({ ...d, variants }))}
+            onGenerate={() => setGenOpen(true)}
+            focusReq={focusReq}
+          />
+        </>
       ) : (
         <Input
-          label={`Price (${currency})`}
+          label={
+            draft.sold_by === 'weight'
+              ? `Rate per kg (${currency})`
+              : draft.sold_by === 'piece'
+              ? `Price per piece (${currency})`
+              : `Price (${currency})`
+          }
           type="number"
           min="0"
           value={draft.price}
           onChange={set('price')}
+        />
+      )}
+
+      {draft.sold_by === 'weight' && (
+        <QuickWeightsEditor
+          weights={draft.quick_weights}
+          onChange={(quick_weights) => setDraft((d) => ({ ...d, quick_weights }))}
         />
       )}
 

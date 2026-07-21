@@ -60,6 +60,17 @@
   padding: var(--sp-3);
   border-bottom: 1px solid var(--border);
 }
+.manage__list-head--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-3);
+}
+.manage__list-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
 .manage__search {
   display: flex;
   align-items: center;
@@ -113,6 +124,12 @@
 }
 .manage__row.is-active {
   background: var(--gold-dim);
+}
+.manage__row--off {
+  opacity: 0.5;
+}
+.manage__row--off.is-active {
+  opacity: 0.8;
 }
 .manage__row-text {
   display: flex;
@@ -364,6 +381,35 @@
   padding: 1px 6px;
   border-radius: 6px;
   font-size: 13px;
+}
+
+/* ---- quick weights editor ---- */
+.qweights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+.qweights__row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.qweights__label {
+  flex: 1.6;
+  min-width: 0;
+}
+.qweights__kg {
+  flex: 0 0 96px;
+  width: 96px;
+}
+.qweights__unit {
+  color: var(--text-muted);
+  font-size: 14px;
+  width: 20px;
 }
 
 /* ---- combination generator ---- */

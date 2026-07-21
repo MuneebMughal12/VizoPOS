@@ -25,6 +25,25 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    // v3: how an item is sold.
+    //   sold_by: 'unit'   — fixed price, single serving (default; existing rows)
+    //            'piece'  — fixed price, quantities are pieces (pcs label)
+    //            'weight' — price is the RATE PER KG (on the item, or per
+    //                       variant when the item has variants)
+    //   quick_weights: JSON array of { label, kg } — this item's POS weight
+    //                  buttons (weight items only).
+    version: 3,
+    up(database) {
+      const cols = database.prepare('PRAGMA table_info(items)').all().map((c) => c.name);
+      if (!cols.includes('sold_by')) {
+        database.exec("ALTER TABLE items ADD COLUMN sold_by TEXT NOT NULL DEFAULT 'unit'");
+      }
+      if (!cols.includes('quick_weights')) {
+        database.exec('ALTER TABLE items ADD COLUMN quick_weights TEXT');
+      }
+    },
+  },
 ];
 
 function tableExists(name) {

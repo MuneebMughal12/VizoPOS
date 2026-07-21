@@ -1,6 +1,43 @@
 // Menu management: categories, items, variants, add-on mapping.
 // All functions take the db handle; callers (ipc.js) handle permissions.
 
+// How an item is sold. 'unit' and 'piece' share the same fixed-price logic;
+// 'weight' means the price/variant price is a rate per kg.
+const SOLD_BY = ['unit', 'piece', 'weight'];
+
+// Default POS quick-pick weight buttons for a new weight item.
+const DEFAULT_QUICK_WEIGHTS = [
+  { label: 'Pao', kg: 0.25 },
+  { label: 'Half', kg: 0.5 },
+  { label: '750g', kg: 0.75 },
+  { label: '1 kg', kg: 1 },
+  { label: '1.5 kg', kg: 1.5 },
+  { label: '2 kg', kg: 2 },
+];
+
+// Parse/clean a quick-weights payload into a stored JSON string (or null).
+function normalizeQuickWeights(raw) {
+  if (!Array.isArray(raw)) return null;
+  const out = [];
+  for (const w of raw) {
+    const label = String(w?.label || '').trim();
+    const kg = Number(w?.kg);
+    if (!label || Number.isNaN(kg) || kg <= 0) continue;
+    out.push({ label, kg });
+  }
+  return out.length ? JSON.stringify(out) : null;
+}
+
+function parseQuickWeights(json) {
+  if (!json) return [];
+  try {
+    const arr = JSON.parse(json);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
 // ---- categories ------------------------------------------------------
 function listCategories(db) {
   return db.prepare('SELECT * FROM categories ORDER BY sort_order, name').all();
@@ -69,6 +106,8 @@ function listItems(db) {
 function getItem(db, id) {
   const item = db.prepare('SELECT * FROM items WHERE id=?').get(id);
   if (!item) throw new Error('Item not found.');
+  item.sold_by = item.sold_by || 'unit';
+  item.quick_weights = parseQuickWeights(item.quick_weights);
   item.variants = db
     .prepare('SELECT * FROM item_variants WHERE item_id=? ORDER BY sort_order, id')
     .all(id)
@@ -107,12 +146,17 @@ function saveItem(db, payload) {
     if (Number.isNaN(price) || price < 0) throw new Error('Price must be 0 or more.');
   }
 
+  const soldBy = SOLD_BY.includes(payload.sold_by) ? payload.sold_by : 'unit';
+  const quickWeights = soldBy === 'weight' ? normalizeQuickWeights(payload.quick_weights) : null;
+
   const fields = {
     category_id: payload.category_id || null,
     name,
     price,
     image: payload.image || null,
     has_variants: hasVariants,
+    sold_by: soldBy,
+    quick_weights: quickWeights,
     track_stock: payload.track_stock ? 1 : 0,
     stock_qty: Number(payload.stock_qty) || 0,
     low_stock_level: Number(payload.low_stock_level) || 0,
@@ -128,7 +172,8 @@ function saveItem(db, payload) {
       const before = getItem(db, itemId);
       db.prepare(
         `UPDATE items SET category_id=@category_id, name=@name, price=@price, image=@image,
-         has_variants=@has_variants, track_stock=@track_stock, stock_qty=@stock_qty,
+         has_variants=@has_variants, sold_by=@sold_by, quick_weights=@quick_weights,
+         track_stock=@track_stock, stock_qty=@stock_qty,
          low_stock_level=@low_stock_level, sort_order=@sort_order, is_active=@is_active
          WHERE id=${itemId}`
       ).run(fields);
@@ -138,10 +183,10 @@ function saveItem(db, payload) {
     } else {
       const info = db
         .prepare(
-          `INSERT INTO items (category_id, name, price, image, has_variants, track_stock,
-           stock_qty, low_stock_level, sort_order, is_active)
-           VALUES (@category_id, @name, @price, @image, @has_variants, @track_stock,
-           @stock_qty, @low_stock_level, @sort_order, @is_active)`
+          `INSERT INTO items (category_id, name, price, image, has_variants, sold_by,
+           quick_weights, track_stock, stock_qty, low_stock_level, sort_order, is_active)
+           VALUES (@category_id, @name, @price, @image, @has_variants, @sold_by,
+           @quick_weights, @track_stock, @stock_qty, @low_stock_level, @sort_order, @is_active)`
         )
         .run(fields);
       itemId = info.lastInsertRowid;

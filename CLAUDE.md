@@ -20,18 +20,28 @@ foundation, Settings (Business + Billing live), and menu management
 - Combination generator (`GenerateCombinationsModal` + pure logic in
   `variantCombos.js`): two lists → group × size rows, prices left blank;
   add-vs-replace when variants exist; skips duplicate group+name.
-- Item form resets to a blank New Item after every save (fast menu entry).
+
+## How an item is sold (migration v3)
+- `items.sold_by`: 'unit' (fixed price, default) | 'piece' (fixed price, pcs
+  label + POS piece picker) | 'weight' (price / variant price is the RATE PER
+  KG). `items.quick_weights` = JSON `[{label,kg}]` for weight items' POS buttons.
+- Owner-facing config (Sold By selector, rate label, quick-weight editor) is
+  built in the item form. The POS-side pickers (piece 1/2/4/6/12+custom,
+  weight quick buttons + custom + live price) and printing land with the POS
+  screen (Phase 3) and printing (Phase 4). Recipes for weight items are
+  defined per 1 kg and scale with sold weight — wired in Phase 5.
+
+## Management list conventions
+- Items / Categories / Add-ons lists have an All / Active / Inactive filter
+  (default Active). Inactive rows are dimmed with an 'Inactive' pill; the POS
+  must show only active rows. Saving a NEW record clears the form back to
+  'New …' and refocuses the first field; saving an EDIT keeps it open.
 
 ## Schema migrations
-- Real migrations now exist — do NOT edit `resources/schema.sql` to add
-  columns to existing tables; append a `{ version, up(db) }` entry to
-  MIGRATIONS in `src/main/db.js` (idempotent, guarded with PRAGMA
-  table_info). schema.sql stays the v1 baseline.
-
-## Pending / unspecified
-- "Weight-based items" was referenced but never specified — NOT built.
-  Needs: unit of sale, per-unit pricing, and how the cashier enters weight
-  at POS. Ask before implementing.
+- Real migrations exist (v2 variant_group, v3 sold_by + quick_weights) — do
+  NOT edit `resources/schema.sql` to add columns to existing tables; append a
+  `{ version, up(db) }` entry to MIGRATIONS in `src/main/db.js` (idempotent,
+  guarded with PRAGMA table_info). schema.sql stays the v1 baseline.
 
 ## UI language rule (FINAL)
 **All user-facing UI text must be in English** — labels, buttons, empty states, toasts,
