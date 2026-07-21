@@ -1,0 +1,54 @@
+/* VIZO POS design tokens — Part 13 of the brief. Exact values, do not drift. */
+:root {
+  /* Colour palette */
+  --bg-base: #12121C;
+  --bg-surface: #1A1A2E;
+  --bg-elevated: #232338;
+  --border: #2E2E45;
+
+  --gold: #C9A84C;
+  --gold-soft: #E0C878;
+  --gold-dim: rgba(201, 168, 76, 0.14);
+
+  --text-primary: #F2F1EC;
+  --text-secondary: #A9A8B6;
+  --text-muted: #6E6D7D;
+
+  --success: #3FAF6C;
+  --warning: #E0A33E;
+  --danger: #D9534F;
+
+  /* Typography */
+  --font-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --fs-page-title: 28px;
+  --fs-section: 20px;
+  --fs-card-title: 16px;
+  --fs-body: 15px;
+  --fs-label: 13px;
+  --fs-grand-total: 40px;
+
+  /* Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* Shape */
+  --radius-control: 10px; /* buttons, inputs */
+  --radius-card: 14px;    /* cards, dish tiles */
+  --radius-modal: 18px;   /* modals */
+
+  /* Depth */
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  /* Motion: 150–200ms ease-out only */
+  --motion-fast: 150ms ease-out;
+  --motion: 180ms ease-out;
+
+  /* Layout */
+  --sidebar-width: 220px;
+}

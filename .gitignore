@@ -1,0 +1,35 @@
+# dependencies & build output
+node_modules/
+dist/
+out/
+release/
+*.tsbuildinfo
+
+# environment & secrets — never commit
+.env
+.env.*
+*.pem
+*.key
+
+# local databases & logs
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+logs/
+*.log
+
+# license & keygen — the keygen tool must never ship or leak
+license.dat
+keygen/
+keygen*/
+*.lic
+
+# editor / os noise
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+.claude/settings.local.json

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Vizo POS</title>
+<!--
+  Standalone splash — loaded directly by the main process via loadFile,
+  outside the Vite bundle (which is why it carries its own copy of the
+  logo: renderer asset filenames are hashed at build time).
+  Design per Part 13: dark base, soft fades only, no bounce, no spinner circus.
+-->
+<style>
+  :root {
+    --bg-base: #12121C;
+    --border: #2E2E45;
+    --gold: #C9A84C;
+    --text-primary: #F2F1EC;
+    --text-secondary: #A9A8B6;
+    --text-muted: #6E6D7D;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background:
+      radial-gradient(ellipse at 50% -30%, rgba(201, 168, 76, 0.07), transparent 60%),
+      var(--bg-base);
+    font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    cursor: default;
+  }
+  .stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: rise 500ms ease-out both;
+  }
+  .logo {
+    width: 190px;
+    height: auto;
+  }
+  .name {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-indent: 0.3em; /* balance the letter-spacing overhang */
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .tagline {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    margin-top: -6px;
+  }
+  .loader {
+    width: 96px;
+    height: 2px;
+    margin-top: 10px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+    position: relative;
+  }
+  .loader::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -34px;
+    width: 34px;
+    height: 100%;
+    border-radius: 1px;
+    background: var(--gold);
+    opacity: 0.85;
+    animation: sweep 1.4s ease-in-out infinite;
+  }
+  .version {
+    position: fixed;
+    bottom: 12px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes sweep {
+    0%   { left: -34px; }
+    100% { left: 96px; }
+  }
+</style>
+</head>
+<body>
+  <div class="stack">
+    <img class="logo" src="vizo-logo-light.png" alt="Vizo Tech" draggable="false" />
+    <div class="name">Vizo POS</div>
+    <div class="tagline">Restaurant Point of Sale</div>
+    <div class="loader"></div>
+  </div>
+  <div class="version" id="version"></div>
+  <script>
+    const v = new URLSearchParams(location.search).get('v');
+    if (v) document.getElementById('version').textContent = 'v' + v;
+  </script>
+</body>
+</html>
