@@ -14,6 +14,25 @@ foundation, Settings (Business + Billing live), and menu management
 - Renderer loads images as data URLs over IPC with a session cache
   (`src/renderer/lib/imageCache.js`) — no custom protocol.
 
+## Variants
+- `item_variants.variant_group` (added by migration v2) holds an optional
+  group label, e.g. group 'Chicken' + name 'Single'. Empty = plain variant.
+- Combination generator (`GenerateCombinationsModal` + pure logic in
+  `variantCombos.js`): two lists → group × size rows, prices left blank;
+  add-vs-replace when variants exist; skips duplicate group+name.
+- Item form resets to a blank New Item after every save (fast menu entry).
+
+## Schema migrations
+- Real migrations now exist — do NOT edit `resources/schema.sql` to add
+  columns to existing tables; append a `{ version, up(db) }` entry to
+  MIGRATIONS in `src/main/db.js` (idempotent, guarded with PRAGMA
+  table_info). schema.sql stays the v1 baseline.
+
+## Pending / unspecified
+- "Weight-based items" was referenced but never specified — NOT built.
+  Needs: unit of sale, per-unit pricing, and how the cashier enters weight
+  at POS. Ask before implementing.
+
 ## UI language rule (FINAL)
 **All user-facing UI text must be in English** — labels, buttons, empty states, toasts,
 error messages, modals, print previews. No Roman Urdu anywhere in the app UI, in any phase.

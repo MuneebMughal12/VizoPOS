@@ -10,9 +10,22 @@ let db = null;
 
 // ---- Migration runner ------------------------------------------------
 // Keyed on app_meta.schema_version. Always additive, never destructive.
-// v1 is the base schema created from schema.sql; future releases append
-// { version: 2, up(db) { db.exec('ALTER TABLE ...'); } } entries here.
-const MIGRATIONS = [];
+// v1 is the base schema created from schema.sql; each later release appends
+// an entry here that runs once on an existing DB.
+const MIGRATIONS = [
+  {
+    // v2: variant grouping — an optional group label per variant
+    // (e.g. group 'Chicken' + name 'Single'), used by the combination
+    // generator and the POS variant popup.
+    version: 2,
+    up(database) {
+      const cols = database.prepare('PRAGMA table_info(item_variants)').all();
+      if (!cols.some((c) => c.name === 'variant_group')) {
+        database.exec('ALTER TABLE item_variants ADD COLUMN variant_group TEXT');
+      }
+    },
+  },
+];
 
 function tableExists(name) {
   return !!db

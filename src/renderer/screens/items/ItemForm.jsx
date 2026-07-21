@@ -9,6 +9,7 @@ import { useToast } from '../../components/ui/Toast';
 import DishImage from '../../components/DishImage';
 import VariantsEditor from './VariantsEditor';
 import ImagePickerModal from './ImagePickerModal';
+import GenerateCombinationsModal from './GenerateCombinationsModal';
 
 const EMPTY = {
   id: null,
@@ -31,6 +32,8 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
   const [draft, setDraft] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [genOpen, setGenOpen] = useState(false);
+  const [focusReq, setFocusReq] = useState(null); // { index, token } for price focus
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [newCat, setNewCat] = useState(null); // null = hidden, '' = open+empty
 
@@ -74,6 +77,7 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
   }
 
   async function onSave() {
+    const wasNew = !draft.id;
     setBusy(true);
     const res = await window.vizo.menu.saveItem({
       ...draft,
@@ -84,8 +88,17 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
       toast(res.error, 'danger');
       return;
     }
+    // Reset to a blank New Item so the owner can enter the next dish
+    // straight away (fast menu entry). Editing an item remounts this form
+    // via a key change; a brand-new item keeps the same "new" key, so
+    // clear the fields here too.
     toast('Item saved.', 'success');
-    onChanged(res.item.id);
+    if (wasNew) {
+      setDraft(EMPTY);
+      setFocusReq(null);
+      setNewCat(null);
+    }
+    onChanged(null);
   }
 
   async function onDelete() {
@@ -173,6 +186,8 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
           variants={draft.variants}
           currency={currency}
           onChange={(variants) => setDraft((d) => ({ ...d, variants }))}
+          onGenerate={() => setGenOpen(true)}
+          focusReq={focusReq}
         />
       ) : (
         <Input
@@ -239,6 +254,17 @@ export default function ItemForm({ itemId, categories, addons, currency, onChang
         onSelect={(ref) => {
           setDraft((d) => ({ ...d, image: ref }));
           setPickerOpen(false);
+        }}
+      />
+
+      <GenerateCombinationsModal
+        open={genOpen}
+        existing={draft.variants}
+        onClose={() => setGenOpen(false)}
+        onApply={(variants, focusIndex) => {
+          setDraft((d) => ({ ...d, variants }));
+          setFocusReq({ index: focusIndex, token: Date.now() });
+          setGenOpen(false);
         }}
       />
 

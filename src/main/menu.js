@@ -71,7 +71,8 @@ function getItem(db, id) {
   if (!item) throw new Error('Item not found.');
   item.variants = db
     .prepare('SELECT * FROM item_variants WHERE item_id=? ORDER BY sort_order, id')
-    .all(id);
+    .all(id)
+    .map((v) => ({ ...v, group: v.variant_group ?? '' }));
   item.addon_ids = db
     .prepare('SELECT addon_id FROM item_addons WHERE item_id=?')
     .all(id)
@@ -158,12 +159,13 @@ function saveItem(db, payload) {
     variants.forEach((v, idx) => {
       const vname = String(v.name).trim();
       const vprice = Number(v.price);
+      const vgroup = String(v.group || '').trim() || null;
       const vactive = v.is_active === 0 || v.is_active === false ? 0 : 1;
       if (v.id && existingIds.includes(v.id)) {
         const before = db.prepare('SELECT price, name FROM item_variants WHERE id=?').get(v.id);
         db.prepare(
-          'UPDATE item_variants SET name=?, price=?, sort_order=?, is_active=? WHERE id=?'
-        ).run(vname, vprice, idx, vactive, v.id);
+          'UPDATE item_variants SET name=?, price=?, sort_order=?, is_active=?, variant_group=? WHERE id=?'
+        ).run(vname, vprice, idx, vactive, vgroup, v.id);
         if (before && Number(before.price) !== vprice) {
           priceChange =
             (priceChange ? priceChange + '; ' : '') +
@@ -171,8 +173,8 @@ function saveItem(db, payload) {
         }
       } else {
         db.prepare(
-          'INSERT INTO item_variants (item_id, name, price, sort_order, is_active) VALUES (?, ?, ?, ?, ?)'
-        ).run(itemId, vname, vprice, idx, vactive);
+          'INSERT INTO item_variants (item_id, name, price, sort_order, is_active, variant_group) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(itemId, vname, vprice, idx, vactive, vgroup);
       }
     });
 
