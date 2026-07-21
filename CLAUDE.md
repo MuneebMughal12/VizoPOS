@@ -1,9 +1,18 @@
 # Vizo POS — Project Rules
 
 Full spec: `C:\Users\munee\Downloads\VIZO-POS-BRIEF-FULL.md` (decisions marked FINAL are locked).
-Build phase-by-phase per Part 14 of the brief. Phase 0 (foundation) and
-Phase 1 (Settings: Business + Billing live; Printer/Staff/Backup placeholders)
-are complete. Next: Phase 2 (menu management).
+Build phase-by-phase per Part 14 of the brief. Phases 0–2 are complete:
+foundation, Settings (Business + Billing live), and menu management
+(categories / items / variants / add-ons / image library). Next: Phase 3
+(POS screen & order transaction).
+
+## Dish image library
+- Bundled photos: `resources/dish-images/` — lowercase-hyphenated filenames
+  (`chicken-biryani.jpg`); search derives names from filenames. See the
+  README in that folder. Owner uploads land in `%APPDATA%\VizoPOS\images\dishes`.
+- `items.image` stores a prefixed ref: `lib/<file>` or `user/<file>`.
+- Renderer loads images as data URLs over IPC with a session cache
+  (`src/renderer/lib/imageCache.js`) — no custom protocol.
 
 ## UI language rule (FINAL)
 **All user-facing UI text must be in English** — labels, buttons, empty states, toasts,

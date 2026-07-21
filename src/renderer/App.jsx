@@ -8,7 +8,9 @@ import ChangePasswordModal from './screens/ChangePasswordModal';
 import Dashboard from './screens/Dashboard';
 import Placeholder from './screens/Placeholder';
 import SettingsScreen from './screens/settings/SettingsScreen';
+import ItemsScreen from './screens/items/ItemsScreen';
 import './screens/settings/settings.css';
+import './screens/items/items.css';
 
 function Routed() {
   const { user, mustChangePassword, setMustChangePassword } = useAuth();
@@ -32,17 +34,7 @@ function Routed() {
                 />
               }
             />
-            <Route
-              path="/items"
-              element={
-                <Placeholder
-                  kind="items"
-                  title="Items"
-                  phase="Phase 2"
-                  description="Manage categories, items, variants and add-ons — build your entire menu here."
-                />
-              }
-            />
+            <Route path="/items" element={<ItemsScreen />} />
             <Route
               path="/stock"
               element={

@@ -13,4 +13,20 @@ contextBridge.exposeInMainWorld('vizo', {
     save: (entries) => ipcRenderer.invoke('settings:save', { entries }),
     chooseLogo: () => ipcRenderer.invoke('settings:choose-logo'),
   },
+  menu: {
+    listCategories: () => ipcRenderer.invoke('menu:categories:list'),
+    saveCategory: (payload) => ipcRenderer.invoke('menu:categories:save', payload),
+    listAddons: () => ipcRenderer.invoke('menu:addons:list'),
+    saveAddon: (payload) => ipcRenderer.invoke('menu:addons:save', payload),
+    deleteAddon: (id) => ipcRenderer.invoke('menu:addons:delete', { id }),
+    listItems: () => ipcRenderer.invoke('menu:items:list'),
+    getItem: (id) => ipcRenderer.invoke('menu:items:get', { id }),
+    saveItem: (payload) => ipcRenderer.invoke('menu:items:save', payload),
+    deleteItem: (id) => ipcRenderer.invoke('menu:items:delete', { id }),
+  },
+  images: {
+    library: () => ipcRenderer.invoke('images:library'),
+    data: (ref) => ipcRenderer.invoke('images:data', { ref }),
+    upload: () => ipcRenderer.invoke('images:upload'),
+  },
 });

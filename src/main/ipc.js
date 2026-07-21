@@ -10,6 +10,8 @@ const {
   logoDataUrl,
   saveLogoFromPath,
 } = require('./settings');
+const menu = require('./menu');
+const images = require('./images');
 
 // All permissions in the system — owner implicitly has every one.
 const ALL_PERMISSIONS = [
@@ -46,6 +48,33 @@ function requireOwner() {
   if (!currentUser) return { ok: false, error: 'Login required.' };
   if (currentUser.role !== 'owner') return { ok: false, error: 'Owner access only.' };
   return null;
+}
+
+function requirePermission(permission) {
+  if (!currentUser) return { ok: false, error: 'Login required.' };
+  if (currentUser.role === 'owner') return null;
+  if (!currentUser.permissions.includes(permission)) {
+    return { ok: false, error: 'You do not have permission for this.' };
+  }
+  return null;
+}
+
+// Wraps a handler: permission check, db handle, and errors as {ok:false}.
+function guarded(permission, fn) {
+  return async (e, payload) => {
+    try {
+      if (permission) {
+        const denied = requirePermission(permission);
+        if (denied) return denied;
+      } else if (!currentUser) {
+        return { ok: false, error: 'Login required.' };
+      }
+      const data = await fn(getDb(), payload ?? {}, e);
+      return { ok: true, ...(data || {}) };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  };
 }
 
 function registerIpc() {
@@ -149,6 +178,52 @@ function registerIpc() {
       return { ok: false, error: `Logo upload failed: ${err.message}` };
     }
   });
+
+  // ---- menu: categories -------------------------------------------
+  ipcMain.handle('menu:categories:list', guarded(null, (db) => ({ categories: menu.listCategories(db) })));
+  ipcMain.handle('menu:categories:save', guarded('manage_items', (db, payload) => {
+    const category = menu.saveCategory(db, payload);
+    logAudit(db, currentUser.id, 'category_save', 'category', category.id, category.name);
+    return { category, categories: menu.listCategories(db) };
+  }));
+
+  // ---- menu: add-ons ----------------------------------------------
+  ipcMain.handle('menu:addons:list', guarded(null, (db) => ({ addons: menu.listAddons(db) })));
+  ipcMain.handle('menu:addons:save', guarded('manage_items', (db, payload) => {
+    const addon = menu.saveAddon(db, payload);
+    logAudit(db, currentUser.id, 'addon_save', 'addon', addon.id, `${addon.name} @ ${addon.price}`);
+    return { addon, addons: menu.listAddons(db) };
+  }));
+  ipcMain.handle('menu:addons:delete', guarded('manage_items', (db, { id }) => {
+    menu.deleteAddon(db, id);
+    logAudit(db, currentUser.id, 'addon_delete', 'addon', id, null);
+    return { addons: menu.listAddons(db) };
+  }));
+
+  // ---- menu: items ------------------------------------------------
+  ipcMain.handle('menu:items:list', guarded(null, (db) => ({ items: menu.listItems(db) })));
+  ipcMain.handle('menu:items:get', guarded(null, (db, { id }) => ({ item: menu.getItem(db, id) })));
+  ipcMain.handle('menu:items:save', guarded('manage_items', (db, payload) => {
+    const { item, priceChange } = menu.saveItem(db, payload);
+    logAudit(db, currentUser.id, 'item_save', 'item', item.id, item.name);
+    if (priceChange) {
+      logAudit(db, currentUser.id, 'price_change', 'item', item.id, priceChange);
+    }
+    return { item, items: menu.listItems(db) };
+  }));
+  ipcMain.handle('menu:items:delete', guarded('manage_items', (db, { id }) => {
+    const name = menu.deleteItem(db, id);
+    logAudit(db, currentUser.id, 'item_delete', 'item', id, name);
+    return { items: menu.listItems(db) };
+  }));
+
+  // ---- dish images ------------------------------------------------
+  ipcMain.handle('images:library', guarded(null, () => ({ images: images.listLibrary() })));
+  ipcMain.handle('images:data', guarded(null, (_db, { ref }) => ({ dataUrl: images.imageDataUrl(ref) })));
+  ipcMain.handle('images:upload', guarded('manage_items', async (_db, _p, e) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    return await images.uploadDishImage(win);
+  }));
 }
 
 module.exports = { registerIpc, getCurrentUser, ALL_PERMISSIONS };
