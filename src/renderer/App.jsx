@@ -1,11 +1,14 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { ToastProvider } from './components/ui/Toast';
 import AppShell from './shell/AppShell';
 import Login from './screens/Login';
 import ChangePasswordModal from './screens/ChangePasswordModal';
 import Dashboard from './screens/Dashboard';
 import Placeholder from './screens/Placeholder';
+import SettingsScreen from './screens/settings/SettingsScreen';
+import './screens/settings/settings.css';
 
 function Routed() {
   const { user, mustChangePassword, setMustChangePassword } = useAuth();
@@ -73,17 +76,7 @@ function Routed() {
                 />
               }
             />
-            <Route
-              path="/settings"
-              element={
-                <Placeholder
-                  kind="settings"
-                  title="Settings"
-                  phase="Phase 1"
-                  description="All Business, Billing, Printer, Staff and Backup settings."
-                />
-              }
-            />
+            <Route path="/settings" element={<SettingsScreen />} />
           </Route>
         </Routes>
       </HashRouter>
@@ -99,7 +92,9 @@ export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <Routed />
+        <SettingsProvider>
+          <Routed />
+        </SettingsProvider>
       </AuthProvider>
     </ToastProvider>
   );

@@ -1,8 +1,11 @@
-const { ipcMain, app } = require('electron');
+const { ipcMain, app, dialog, BrowserWindow } = require('electron');
+const fs = require('node:fs');
+const path = require('node:path');
 const { getDb } = require('./db');
 const { verifyPassword, hashPassword } = require('./auth');
 const { logAudit } = require('./audit');
 const { dataDir } = require('./paths');
+const { getAllSettings, setSettings, getSetting, applyBusinessTitle } = require('./settings');
 
 // All permissions in the system — owner implicitly has every one.
 const ALL_PERMISSIONS = [
@@ -17,7 +20,7 @@ const ALL_PERMISSIONS = [
   'day_end_closing',
 ];
 
-// Session lives in the main process; later phases enforce permissions here
+// Session lives in the main process; permissions are enforced here
 // again, not just in the UI.
 let currentUser = null;
 
@@ -35,12 +38,31 @@ function getCurrentUser() {
   return currentUser;
 }
 
+function requireOwner() {
+  if (!currentUser) return { ok: false, error: 'Login required.' };
+  if (currentUser.role !== 'owner') return { ok: false, error: 'Owner access only.' };
+  return null;
+}
+
+const LOGO_MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
+
+function logoDataUrl(db) {
+  const file = getSetting(db, 'business.logo');
+  if (!file) return null;
+  const full = path.join(dataDir(), 'images', file);
+  if (!fs.existsSync(full)) return null;
+  const mime = LOGO_MIME[path.extname(full).toLowerCase()];
+  if (!mime) return null;
+  return `data:${mime};base64,${fs.readFileSync(full).toString('base64')}`;
+}
+
 function registerIpc() {
   ipcMain.handle('app:info', () => ({
     version: app.getVersion(),
     dataDir: dataDir(),
   }));
 
+  // ---- auth --------------------------------------------------------
   ipcMain.handle('auth:login', (_e, { username, password }) => {
     const db = getDb();
     const row = db
@@ -87,6 +109,63 @@ function registerIpc() {
     );
     logAudit(db, row.id, 'password_change', 'user', row.id, `Password changed: ${row.username}`);
     return { ok: true };
+  });
+
+  // ---- settings ----------------------------------------------------
+  // Reading is allowed for any logged-in user (top bar needs the business
+  // name); writing is strictly owner-only.
+  ipcMain.handle('settings:get-all', () => {
+    if (!currentUser) return { ok: false, error: 'Login required.' };
+    const db = getDb();
+    return { ok: true, settings: getAllSettings(db), logoDataUrl: logoDataUrl(db) };
+  });
+
+  ipcMain.handle('settings:save', (_e, { entries }) => {
+    const denied = requireOwner();
+    if (denied) return denied;
+    if (!entries || typeof entries !== 'object') {
+      return { ok: false, error: 'Nothing to save.' };
+    }
+    const db = getDb();
+    const changes = setSettings(db, entries);
+    if (changes.length > 0) {
+      const details = changes.map((c) => `${c.key}: '${c.from}' -> '${c.to}'`).join('; ');
+      logAudit(db, currentUser.id, 'settings_change', 'setting', null, details);
+      if (changes.some((c) => c.key === 'business.name')) applyBusinessTitle(db);
+    }
+    return { ok: true, settings: getAllSettings(db) };
+  });
+
+  ipcMain.handle('settings:choose-logo', async (e) => {
+    const denied = requireOwner();
+    if (denied) return denied;
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const result = await dialog.showOpenDialog(win, {
+      title: 'Choose Restaurant Logo',
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }],
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return { ok: true, canceled: true };
+    }
+    const src = result.filePaths[0];
+    const ext = path.extname(src).toLowerCase();
+    if (!LOGO_MIME[ext]) return { ok: false, error: 'Please choose a PNG or JPG image.' };
+
+    const imagesDir = path.join(dataDir(), 'images');
+    fs.mkdirSync(imagesDir, { recursive: true });
+    // clear previous logo files so stale extensions don't linger
+    for (const old of ['logo.png', 'logo.jpg', 'logo.jpeg']) {
+      const p = path.join(imagesDir, old);
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+    const destName = `logo${ext}`;
+    fs.copyFileSync(src, path.join(imagesDir, destName));
+
+    const db = getDb();
+    setSettings(db, { 'business.logo': destName });
+    logAudit(db, currentUser.id, 'settings_change', 'setting', null, `business.logo -> ${destName}`);
+    return { ok: true, logoDataUrl: logoDataUrl(db) };
   });
 }
 

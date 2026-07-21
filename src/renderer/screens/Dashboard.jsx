@@ -1,5 +1,6 @@
 import { Banknote, ReceiptText, PackageX, DatabaseBackup, BarChart3, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import './Dashboard.css';
 
 function Kpi({ icon: Icon, label, value, tone }) {
@@ -18,13 +19,15 @@ function Kpi({ icon: Icon, label, value, tone }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { settings } = useSettings();
+  const currency = settings['business.currency'] || 'Rs';
 
   return (
     <div className="dashboard">
       <h1>Dashboard</h1>
 
       <div className="dashboard__kpis">
-        <Kpi icon={Banknote} label="Today's Sales" value="Rs 0" />
+        <Kpi icon={Banknote} label="Today's Sales" value={`${currency} 0`} />
         <Kpi icon={ReceiptText} label="Orders" value="0" />
         <Kpi icon={PackageX} label="Low Stock" value="0" />
         <Kpi icon={DatabaseBackup} label="Last Backup" value="Never" tone="warning" />

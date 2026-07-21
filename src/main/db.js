@@ -4,6 +4,7 @@ const Database = require('better-sqlite3');
 const fs = require('node:fs');
 const { dbPath, schemaPath, ensureDataDirs } = require('./paths');
 const { hashPassword } = require('./auth');
+const { seedDefaults } = require('./settings');
 
 let db = null;
 
@@ -47,6 +48,7 @@ function initDatabase() {
 
   runMigrations();
   seedAdmin();
+  seedDefaults(db);
   return db;
 }
 

@@ -1,8 +1,9 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('node:path');
-const { initDatabase, getMeta } = require('./db');
+const { initDatabase, getMeta, getDb } = require('./db');
 const { registerIpc } = require('./ipc');
 const { dbPath } = require('./paths');
+const { applyBusinessTitle } = require('./settings');
 
 const DEV_URL = process.env.VITE_DEV_SERVER_URL;
 
@@ -74,6 +75,9 @@ function createWindow() {
   });
 
   Menu.setApplicationMenu(null);
+  // The window title is owned by the main process (restaurant name from
+  // Settings) — never let document.title overwrite it.
+  win.on('page-title-updated', (e) => e.preventDefault());
 
   if (DEV_URL) {
     win.loadURL(DEV_URL);
@@ -109,6 +113,7 @@ app.whenReady().then(() => {
     initDatabase();
     registerIpc();
     const win = createWindow();
+    applyBusinessTitle(getDb());
 
     let handedOver = false;
     const handover = () => {

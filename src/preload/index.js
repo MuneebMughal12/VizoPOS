@@ -8,4 +8,9 @@ contextBridge.exposeInMainWorld('vizo', {
   logout: () => ipcRenderer.invoke('auth:logout'),
   changePassword: (currentPassword, newPassword) =>
     ipcRenderer.invoke('auth:change-password', { currentPassword, newPassword }),
+  settings: {
+    getAll: () => ipcRenderer.invoke('settings:get-all'),
+    save: (entries) => ipcRenderer.invoke('settings:save', { entries }),
+    chooseLogo: () => ipcRenderer.invoke('settings:choose-logo'),
+  },
 });

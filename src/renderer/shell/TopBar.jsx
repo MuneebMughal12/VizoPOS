@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 function formatClock(d) {
   const date = d.toLocaleDateString('en-GB', {
@@ -18,17 +19,17 @@ function formatClock(d) {
 
 export default function TopBar() {
   const [now, setNow] = useState(new Date());
+  const { settings } = useSettings();
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 15000);
     return () => clearInterval(t);
   }, []);
 
-  // Restaurant name flows in from Settings in Phase 1; until then the
-  // product name holds this spot.
+  const name = settings['business.name'] || 'Vizo POS';
   return (
     <header className="topbar">
-      <span className="topbar__name">Vizo POS</span>
+      <span className="topbar__name">{name}</span>
       <div className="topbar__right">
         <span className="topbar__clock num">{formatClock(now)}</span>
         <button className="topbar__bell" title="Alerts">

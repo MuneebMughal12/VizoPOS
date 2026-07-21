@@ -1,7 +1,9 @@
 # Vizo POS — Project Rules
 
 Full spec: `C:\Users\munee\Downloads\VIZO-POS-BRIEF-FULL.md` (decisions marked FINAL are locked).
-Build phase-by-phase per Part 14 of the brief. Phase 0 (foundation) is complete.
+Build phase-by-phase per Part 14 of the brief. Phase 0 (foundation) and
+Phase 1 (Settings: Business + Billing live; Printer/Staff/Backup placeholders)
+are complete. Next: Phase 2 (menu management).
 
 ## UI language rule (FINAL)
 **All user-facing UI text must be in English** — labels, buttons, empty states, toasts,
