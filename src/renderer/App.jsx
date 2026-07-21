@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ToastProvider } from './components/ui/Toast';
@@ -9,8 +9,17 @@ import Dashboard from './screens/Dashboard';
 import Placeholder from './screens/Placeholder';
 import SettingsScreen from './screens/settings/SettingsScreen';
 import ItemsScreen from './screens/items/ItemsScreen';
+import POSScreen from './screens/pos/POSScreen';
+import SalesHistory from './screens/pos/SalesHistory';
+import { canSeeDashboard } from './lib/access';
 import './screens/settings/settings.css';
 import './screens/items/items.css';
+
+// A plain cashier lands straight on the POS; only richer roles see a dashboard.
+function Home() {
+  const auth = useAuth();
+  return canSeeDashboard(auth) ? <Dashboard /> : <Navigate to="/pos" replace />;
+}
 
 function Routed() {
   const { user, mustChangePassword, setMustChangePassword } = useAuth();
@@ -22,18 +31,9 @@ function Routed() {
       <HashRouter>
         <Routes>
           <Route element={<AppShell />}>
-            <Route index element={<Dashboard />} />
-            <Route
-              path="/pos"
-              element={
-                <Placeholder
-                  kind="pos"
-                  title="POS"
-                  phase="Phase 3"
-                  description="Order screen — dish grid, variants, add-ons, cart and SAVE & PRINT."
-                />
-              }
-            />
+            <Route index element={<Home />} />
+            <Route path="/pos" element={<POSScreen />} />
+            <Route path="/history" element={<SalesHistory />} />
             <Route path="/items" element={<ItemsScreen />} />
             <Route
               path="/stock"

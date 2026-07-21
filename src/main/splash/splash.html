@@ -20,9 +20,12 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; overflow: hidden; }
+  /* Entry screen — carries the Vizo Tech brand (cyan + purple). This accent
+     never appears on any working screen. */
   body {
     background:
-      radial-gradient(ellipse at 50% -30%, rgba(201, 168, 76, 0.07), transparent 60%),
+      radial-gradient(ellipse at 50% -25%, rgba(0, 240, 255, 0.10), transparent 55%),
+      radial-gradient(ellipse at 50% 120%, rgba(157, 5, 255, 0.10), transparent 55%),
       var(--bg-base);
     font-family: Inter, 'Segoe UI', system-ui, sans-serif;
     color: var(--text-primary);
@@ -48,8 +51,11 @@
     font-weight: 600;
     letter-spacing: 0.3em;
     text-indent: 0.3em; /* balance the letter-spacing overhang */
-    color: var(--gold);
     text-transform: uppercase;
+    background: linear-gradient(135deg, #00F0FF, #9D05FF);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
   .tagline {
     font-size: 12px;
@@ -70,12 +76,11 @@
     content: '';
     position: absolute;
     top: 0;
-    left: -34px;
-    width: 34px;
+    left: -40px;
+    width: 40px;
     height: 100%;
     border-radius: 1px;
-    background: var(--gold);
-    opacity: 0.85;
+    background: linear-gradient(135deg, #00F0FF, #9D05FF);
     animation: sweep 1.4s ease-in-out infinite;
   }
   .version {

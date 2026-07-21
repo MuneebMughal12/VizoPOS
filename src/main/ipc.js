@@ -12,6 +12,7 @@ const {
 } = require('./settings');
 const menu = require('./menu');
 const images = require('./images');
+const orders = require('./orders');
 
 // All permissions in the system — owner implicitly has every one.
 const ALL_PERMISSIONS = [
@@ -224,6 +225,24 @@ function registerIpc() {
     const win = BrowserWindow.fromWebContents(e.sender);
     return await images.uploadDishImage(win);
   }));
+
+  // ---- POS / orders -----------------------------------------------
+  ipcMain.handle('pos:menu', guarded('take_order', (db) => menu.getPosMenu(db)));
+  ipcMain.handle('pos:save-order', guarded('take_order', (db, payload) => ({
+    order: orders.saveOrder(db, currentUser, { ...payload, status: 'paid' }),
+  })));
+  ipcMain.handle('pos:hold-order', guarded('take_order', (db, payload) => ({
+    order: orders.saveOrder(db, currentUser, { ...payload, status: 'pending' }),
+  })));
+  ipcMain.handle('pos:get-order', guarded('take_order', (db, { id }) => ({
+    order: orders.getOrder(db, id),
+  })));
+  ipcMain.handle('pos:list-orders', guarded('take_order', (db, filters) => ({
+    orders: orders.listOrders(db, filters || {}),
+  })));
+  ipcMain.handle('pos:void-order', guarded('void_order', (db, { id, reason }) => ({
+    order: orders.voidOrder(db, currentUser, id, reason),
+  })));
 }
 
 module.exports = { registerIpc, getCurrentUser, ALL_PERMISSIONS };

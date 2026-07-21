@@ -1,3 +1,5 @@
+/* Entry screen — carries the Vizo Tech brand (cyan + purple). This accent
+   is scoped to .login and never leaks into any working screen. */
 .login {
   height: 100%;
   display: flex;
@@ -5,8 +7,33 @@
   align-items: center;
   justify-content: center;
   gap: var(--sp-5);
-  background: radial-gradient(ellipse at 50% -20%, rgba(201, 168, 76, 0.06), transparent 60%),
+  background: radial-gradient(ellipse at 50% -15%, rgba(0, 240, 255, 0.09), transparent 55%),
+    radial-gradient(ellipse at 50% 115%, rgba(157, 5, 255, 0.09), transparent 55%),
     var(--bg-base);
+}
+.login__logo-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* gradient accent bar under the logo lockup */
+.login__logo-wrap::after {
+  content: '';
+  margin-top: var(--sp-3);
+  width: 64px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(135deg, #00f0ff, #9d05ff);
+}
+/* brand gradient primary button — login only */
+.login .btn--primary {
+  background: linear-gradient(135deg, #00f0ff, #9d05ff);
+  color: #0b1020;
+}
+.login .btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: linear-gradient(135deg, #00f0ff, #9d05ff);
 }
 .login__card {
   width: 400px;

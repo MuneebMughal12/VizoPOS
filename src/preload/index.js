@@ -29,4 +29,12 @@ contextBridge.exposeInMainWorld('vizo', {
     data: (ref) => ipcRenderer.invoke('images:data', { ref }),
     upload: () => ipcRenderer.invoke('images:upload'),
   },
+  pos: {
+    menu: () => ipcRenderer.invoke('pos:menu'),
+    saveOrder: (payload) => ipcRenderer.invoke('pos:save-order', payload),
+    holdOrder: (payload) => ipcRenderer.invoke('pos:hold-order', payload),
+    getOrder: (id) => ipcRenderer.invoke('pos:get-order', { id }),
+    listOrders: (filters) => ipcRenderer.invoke('pos:list-orders', filters),
+    voidOrder: (id, reason) => ipcRenderer.invoke('pos:void-order', { id, reason }),
+  },
 });

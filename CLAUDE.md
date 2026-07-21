@@ -1,10 +1,47 @@
 # Vizo POS — Project Rules
 
 Full spec: `C:\Users\munee\Downloads\VIZO-POS-BRIEF-FULL.md` (decisions marked FINAL are locked).
-Build phase-by-phase per Part 14 of the brief. Phases 0–2 are complete:
-foundation, Settings (Business + Billing live), and menu management
-(categories / items / variants / add-ons / image library). Next: Phase 3
-(POS screen & order transaction).
+Build phase-by-phase per Part 14 of the brief. Phases 0–3 are complete:
+foundation, Settings, menu management, and the POS screen & order
+transaction. Next: Phase 4 (printing).
+
+## Part 13 addendum — theme scope (FINAL)
+- **Working screens (POS, Items, Stock, Reports, Settings, dashboard)** stay
+  calm charcoal + gold only: base `#12121C`, surfaces `#1A1A2E`/`#232338`,
+  accent gold `#C9A84C`. Warm neutrals keep food photography appetising and
+  are easy on staff who watch these screens for twelve hours. NEVER use cyan,
+  purple, gradients, or glow on any working screen.
+- **Entry screens only (splash, login, activation, About)** carry the Vizo
+  Tech brand: electric cyan `#00F0FF` + electric purple `#9D05FF`, as a
+  `linear-gradient(135deg,#00F0FF,#9D05FF)` accent on the logo lockup and the
+  primary button, with a soft ambient radial tint behind. These give a
+  striking first impression; the brand never leaks into the working screens.
+- POS look: category **pills** (rounded chips, active filled gold, small
+  circular dish thumbnail inside; 'All' first), premium **dish tiles** (photo
+  top ~65% + bottom scrim, name 13–14px, gold price, 14px radius, 1px border →
+  gold on hover + 2px lift; variant items 'from Rs X' + gold corner dot, per-kg
+  'Rs X / kg', per-piece 'Rs X / pc'), order type as a **segmented pill**
+  (top-right, active gold), cart on a distinct surface, totals pinned bottom
+  with the grand total large in gold, one wide gold **Save & print** + a narrow
+  muted **Hold**. Motion 150–200ms ease-out only.
+
+## Permissions model (note now; enforce fully in Phase 7)
+- A plain order-taking cashier (only `take_order`) logs straight into POS — no
+  dashboard. Sidebar shows only POS (plus Sales History if they have
+  `reprint_bill`). Dashboard/Items/Stock/Reports/Staff/Settings not visible.
+- POS shows a slim cashier strip: their name, own order count, own sales total
+  only — never full-day sales, profit, stock, or backup.
+- More permissions → more appears: a cashier/manager with reports/stock/item
+  access gets a dashboard with only the cards they're allowed + matching
+  sidebar entries. Managers get the dashboard minus the profit card.
+- All operational permissions are grantable, incl. `manage_items`,
+  `stock_entry`, `stock_edit` (owner can lend menu entry during install, then
+  revoke).
+- Five stay owner-only forever, never checkboxes: profit reports, Settings,
+  staff management, backup restore, discount master switch.
+- Rule of thumb: every operational task can be delegated; nothing that gives
+  control can be. Enforce in the main process too (guarded IPC), not just by
+  hiding UI.
 
 ## Dish image library
 - Bundled photos: `resources/dish-images/` — lowercase-hyphenated filenames

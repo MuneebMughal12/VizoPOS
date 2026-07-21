@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShoppingCart,
+  Receipt,
   UtensilsCrossed,
   Package,
   BarChart3,
@@ -10,20 +11,25 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { navVisibility } from '../lib/access';
 import logoLight from '../assets/vizo-logo-light.png';
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/pos', label: 'POS', icon: ShoppingCart },
-  { to: '/items', label: 'Items', icon: UtensilsCrossed },
-  { to: '/stock', label: 'Stock', icon: Package },
-  { to: '/reports', label: 'Reports', icon: BarChart3 },
-  { to: '/staff', label: 'Staff', icon: Users },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, key: 'dashboard' },
+  { to: '/pos', label: 'POS', icon: ShoppingCart, key: 'pos' },
+  { to: '/history', label: 'Sales History', icon: Receipt, key: 'history' },
+  { to: '/items', label: 'Items', icon: UtensilsCrossed, key: 'items' },
+  { to: '/stock', label: 'Stock', icon: Package, key: 'stock' },
+  { to: '/reports', label: 'Reports', icon: BarChart3, key: 'reports' },
+  { to: '/staff', label: 'Staff', icon: Users, key: 'staff' },
+  { to: '/settings', label: 'Settings', icon: Settings, key: 'settings' },
 ];
 
 export default function Sidebar() {
-  const { user, logout } = useAuth();
+  const auth = useAuth();
+  const { user, logout } = auth;
+  const visible = navVisibility(auth);
+  const nav = NAV.filter((n) => visible[n.key]);
 
   return (
     <aside className="sidebar">
@@ -33,7 +39,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="sidebar__nav">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {nav.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}

@@ -25,7 +25,9 @@ export default function Login() {
     <div className="login">
       <form className="login__card card" onSubmit={onSubmit}>
         <div className="login__brand">
-          <img className="login__logo" src={logoLight} alt="Vizo Tech" draggable="false" />
+          <div className="login__logo-wrap">
+            <img className="login__logo" src={logoLight} alt="Vizo Tech" draggable="false" />
+          </div>
           <span className="login__tagline">Restaurant Point of Sale</span>
         </div>
 

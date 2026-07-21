@@ -119,6 +119,32 @@ function getItem(db, id) {
   return item;
 }
 
+// Everything the POS grid needs in one call: active categories, and active
+// items each with their active variants, mapped active add-ons, and parsed
+// quick weights. Inactive rows are omitted entirely (they never reach POS).
+function getPosMenu(db) {
+  const categories = db
+    .prepare('SELECT id, name FROM categories WHERE is_active=1 ORDER BY sort_order, name')
+    .all();
+  const items = db
+    .prepare('SELECT * FROM items WHERE is_active=1 ORDER BY sort_order, name')
+    .all();
+  const variantStmt = db.prepare(
+    'SELECT * FROM item_variants WHERE item_id=? AND is_active=1 ORDER BY sort_order, id'
+  );
+  const addonStmt = db.prepare(
+    `SELECT a.* FROM addons a JOIN item_addons m ON m.addon_id=a.id
+     WHERE m.item_id=? AND a.is_active=1 ORDER BY a.name`
+  );
+  for (const it of items) {
+    it.sold_by = it.sold_by || 'unit';
+    it.quick_weights = parseQuickWeights(it.quick_weights);
+    it.variants = variantStmt.all(it.id).map((v) => ({ ...v, group: v.variant_group ?? '' }));
+    it.addons = addonStmt.all(it.id);
+  }
+  return { categories, items };
+}
+
 // payload: { id?, name, category_id, image, price, has_variants,
 //   variants: [{id?, name, price, sort_order?, is_active?}],
 //   track_stock, stock_qty, low_stock_level, sort_order, is_active,
@@ -252,4 +278,5 @@ module.exports = {
   getItem,
   saveItem,
   deleteItem,
+  getPosMenu,
 };

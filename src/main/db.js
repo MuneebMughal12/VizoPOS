@@ -44,6 +44,18 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    // v4: snapshot how each order line was sold ('unit' | 'piece' | 'weight')
+    // so bills, KOTs and sales history can print "4 pcs" / "15 kg" correctly
+    // even if the item's sold_by changes later.
+    version: 4,
+    up(database) {
+      const cols = database.prepare('PRAGMA table_info(order_items)').all().map((c) => c.name);
+      if (!cols.includes('sold_by')) {
+        database.exec("ALTER TABLE order_items ADD COLUMN sold_by TEXT NOT NULL DEFAULT 'unit'");
+      }
+    },
+  },
 ];
 
 function tableExists(name) {
